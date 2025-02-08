@@ -49,3 +49,6 @@ next-env.d.ts
 projects/*
 
 script/__pycache__
+
+# Generated (WIP) files
+script/static
