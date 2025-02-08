@@ -7,7 +7,9 @@ import openai
 from pathlib import Path
 import re
 from review_app import review_landing_page
+import json
 
+reasoning_effort = "low"
 
 # This script is used to create a new Next.js app in the projects directory.
 
@@ -19,6 +21,7 @@ class NextApp:
         self.app_dir = os.path.join(self.project_dir, self.app_name)
         self.dev_process = None
         self.openai_client = openai.OpenAI()  # Assumes OPENAI_API_KEY env var is set
+        self.images_json_path = os.path.join(self.app_dir, 'public', 'images.json')
 
     def create_project_directory(self):
         os.makedirs(self.project_dir, exist_ok=True)
@@ -128,55 +131,159 @@ class NextApp:
             except Exception as e:
                 print(f"Error writing {relative_path}: {e}")
 
+    def load_image_descriptions(self):
+        """Load existing image descriptions from JSON file."""
+        if os.path.exists(self.images_json_path):
+            try:
+                with open(self.images_json_path, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+        return {}
+
+    def save_image_description(self, filename: str, description: str):
+        """Save image description to JSON file."""
+        os.makedirs(os.path.dirname(self.images_json_path), exist_ok=True)
+        images = self.load_image_descriptions()
+        images[filename] = description
+        with open(self.images_json_path, 'w') as f:
+            json.dump(images, f, indent=2)
+
     def modify_app(self, user_instruction):
         """Modify the app based on user instruction using OpenAI."""
         if not self.project_exists():
             print("Project doesn't exist. Create it first.")
             return
 
+        # Load existing image descriptions
+        existing_images = self.load_image_descriptions()
+        if len(existing_images) > 0:
+            existing_images_context = "<existing_images>\n"
+            existing_images_context += json.dumps(existing_images, indent=2)
+            existing_images_context += "\n</existing_images>\n"
+        else:
+            existing_images_context = ""
+
         # Prepare the prompt
         files_content = self.get_app_files()
         prompt = f"""You are a Next.js expert. Below are the current files in a Next.js application.
 Please modify or create files based on the following instruction:
 
+<user_instruction>
 {user_instruction}
+</user_instruction>
 
-Current files:
+Important notes:
+
+1. You may add images, but you must use the generate_image function to create or re-create any needed images. The image will be saved in the public directory referenced as /[image_name].png
+
+2. When modifying or creating files, you MUST use this exact format:
+   ```language:path/to/file
+   // Complete content of the file goes here
+   ```
+
+3. For new files, provide the complete file contents.
+   For existing files, provide the complete new contents of the file.
+
+{existing_images_context}
+<project_files>
 {files_content}
-
-Respond with the complete content of any files that should be modified or created.
-Use the format ```language:path/to/file for each file, where language is the appropriate
-language identifier (tsx, css, etc) and path/to/file is the path relative to the app root.
+</project_files>
 """
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model="o3-mini",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that modifies Next.js applications."},
-                    {"role": "user", "content": prompt}
-                ],
-                reasoning_effort="low",
-            )
-            
-            # Extract and write the files
-            files_to_write = self.extract_files_from_response(response.choices[0].message.content)
-            if files_to_write:
-                self.write_files(files_to_write)
-                print("Files updated successfully!")
-            else:
-                print("No file changes were found in the response.")
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant that modifies Next.js applications."},
+                {"role": "user", "content": prompt}
+            ]
+
+            while True:
+                response = self.openai_client.chat.completions.create(
+                    model="o3-mini",
+                    messages=messages,
+                    tools=[{
+                        "type": "function",
+                        "function": {
+                            "name": "generate_image",
+                            "description": "Generate an image with the specified filename and description",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "filename": {
+                                        "type": "string",
+                                        "description": "The filename to save the image as (e.g. hero.png)"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "Detailed description of the image to generate"
+                                    }
+                                },
+                                "required": ["filename", "description"]
+                            }
+                        }
+                    }],
+                    tool_choice="auto",
+                    reasoning_effort=reasoning_effort,
+                )
                 
+                response_message = response.choices[0].message
+                messages.append({"role": "assistant", "content": response_message.content, "tool_calls": response_message.tool_calls})
+
+                # print(response_message.content)
+                # print(response_message.tool_calls)
+
+                # If there are no tool calls, we're done
+                if not response_message.tool_calls:
+                    break
+
+                # Handle tool calls
+                tool_call_responses = []
+                for tool_call in response_message.tool_calls:
+                    if tool_call.function.name == "generate_image":
+                        args = json.loads(tool_call.function.arguments)
+                        print(f"\nImage Generation Request:")
+                        print(f"Filename: {args['filename']}")
+                        print(f"Description: {args['description']}")
+                        
+                        # Save the image description
+                        self.save_image_description(args['filename'], args['description'])
+                        
+                        # Here you would actually call your image generation code
+                        # self.generate_image(args['filename'], args['description'])
+                        
+                        tool_call_responses.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": tool_call.function.name,
+                            "content": f"Image {args['filename']} has been generated and saved to the public directory."
+                        })
+
+                # Add tool responses to messages
+                messages.extend(tool_call_responses)
+
+            # Extract and write the files from the final response
+            if response_message.content:
+                files_to_write = self.extract_files_from_response(response_message.content)
+                if files_to_write:
+                    self.write_files(files_to_write)
+                    print("Files updated successfully!")
+                else:
+                    print("No file changes were found in the response.")
+                    
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
+
+    def generate_image(self, filename: str, description: str):
+        """Generate an image using DALL-E or another image generation service."""
+        # TODO: Implement actual image generation
+        print(f"Would generate image {filename} with description: {description}")
+        pass
 
     def run(self):
         self.create_project_directory()
         self.create_app()
         print("App created successfully - run the following command to start the development server:")
         print(f"cd {self.app_dir} && bun dev")
-        # self.start_dev_server()
-        # self.open_browser()
         
         print("\nEnter modifications for your Next.js app (or 'exit' to quit):")
         
@@ -186,15 +293,17 @@ language identifier (tsx, css, etc) and path/to/file is the path relative to the
                 if user_instruction.lower() in ['exit', 'quit', 'q']:
                     break
                 if user_instruction:
+                    self.modify_app(user_instruction)
                     reviewer_feedback = review_landing_page(user_instruction)
                     self.modify_app(reviewer_feedback)
                 else:
                     print("Please enter a modification instruction or 'exit' to quit")
         
         except KeyboardInterrupt:
-            print("\nInterrupt received; stopping the development server.")
+            print("\nInterrupt received.")
         finally:
-            self.dev_process.terminate()
+            if self.dev_process is not None:
+                self.dev_process.terminate()
 
 
 def main():
