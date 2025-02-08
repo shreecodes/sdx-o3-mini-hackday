@@ -159,8 +159,8 @@ class NextApp:
         existing_images = self.load_image_descriptions()
         if len(existing_images) > 0:
             existing_images_context = "<existing_images>\n"
-            json.dump(existing_images, existing_images_context)
-            existing_images_context += "</existing_images>\n"
+            existing_images_context += json.dumps(existing_images, indent=2)
+            existing_images_context += "\n</existing_images>\n"
         else:
             existing_images_context = ""
 
@@ -229,8 +229,8 @@ Important notes:
                 response_message = response.choices[0].message
                 messages.append({"role": "assistant", "content": response_message.content, "tool_calls": response_message.tool_calls})
 
-                print(response_message.content)
-                print(response_message.tool_calls)
+                # print(response_message.content)
+                # print(response_message.tool_calls)
 
                 # If there are no tool calls, we're done
                 if not response_message.tool_calls:
@@ -240,7 +240,6 @@ Important notes:
                 tool_call_responses = []
                 for tool_call in response_message.tool_calls:
                     if tool_call.function.name == "generate_image":
-                        import json
                         args = json.loads(tool_call.function.arguments)
                         print(f"\nImage Generation Request:")
                         print(f"Filename: {args['filename']}")
@@ -285,8 +284,6 @@ Important notes:
         self.create_app()
         print("App created successfully - run the following command to start the development server:")
         print(f"cd {self.app_dir} && bun dev")
-        # self.start_dev_server()
-        # self.open_browser()
         
         print("\nEnter modifications for your Next.js app (or 'exit' to quit):")
         
@@ -297,14 +294,14 @@ Important notes:
                     break
                 if user_instruction:
                     self.modify_app(user_instruction)
-                    # review_landing_page(user_instruction)
                 else:
                     print("Please enter a modification instruction or 'exit' to quit")
         
         except KeyboardInterrupt:
-            print("\nInterrupt received; stopping the development server.")
+            print("\nInterrupt received.")
         finally:
-            self.dev_process.terminate()
+            if self.dev_process is not None:
+                self.dev_process.terminate()
 
 
 def main():
