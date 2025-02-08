@@ -69,18 +69,21 @@ class NextApp:
     def should_include_file(self, file_path):
         """Determine if a file should be included in the prompt."""
         excluded_extensions = {'.ico', '.png', '.jpg', '.jpeg', '.gif', '.svg'}
-        excluded_directories = {'.git', 'node_modules', '.next'}
         
+        # Only include files from the app directory
         path = Path(file_path)
-        if any(part in excluded_directories for part in path.parts):
+        if 'app' not in path.parts:
             return False
+        
         return path.suffix not in excluded_extensions
 
     def get_app_files(self):
         """Get all relevant files from the app directory."""
-        print(f"Scanning files in {self.app_dir}...")
+        app_folder = os.path.join(self.app_dir, 'app')
+        print(f"Scanning files in {app_folder}...")
         file_contents = []
-        for root, _, files in os.walk(self.app_dir):
+        
+        for root, _, files in os.walk(app_folder):
             for file in files:
                 file_path = os.path.join(root, file)
                 if self.should_include_file(file_path):
@@ -91,6 +94,7 @@ class NextApp:
                         file_contents.append(f"<file>{relative_path}\n```\n{content}\n```\n</file>")
                     else:
                         print(f"Skipping {relative_path} due to read error")
+        
         print(f"Found {len(file_contents)} valid files")
         return "\n".join(file_contents)
 
@@ -168,25 +172,32 @@ language identifier (tsx, css, etc) and path/to/file is the path relative to the
     def run(self):
         self.create_project_directory()
         self.create_app()
+        print("App created successfully - run the following command to start the development server:")
+        print(f"cd {self.app_dir} && bun dev")
+        # self.start_dev_server()
+        # self.open_browser()
         
-        # Add optional modification step
-        if len(sys.argv) > 2:
-            user_instruction = " ".join(sys.argv[2:])
-            self.modify_app(user_instruction)
-        
-        self.start_dev_server()
-        self.open_browser()
+        print("\nEnter modifications for your Next.js app (or 'exit' to quit):")
         
         try:
-            self.dev_process.wait()
+            while True:
+                user_instruction = input("\nModification instruction: ").strip()
+                if user_instruction.lower() in ['exit', 'quit', 'q']:
+                    break
+                if user_instruction:
+                    self.modify_app(user_instruction)
+                else:
+                    print("Please enter a modification instruction or 'exit' to quit")
+        
         except KeyboardInterrupt:
             print("\nInterrupt received; stopping the development server.")
+        finally:
             self.dev_process.terminate()
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python create_next_app.py <app_name>")
+        print("Usage: python create_next_app.py <app_name> [initial_instruction]")
         sys.exit(1)
     
     app = NextApp(sys.argv[1])
