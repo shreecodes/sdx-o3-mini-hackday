@@ -9,6 +9,7 @@ import re
 from review_app import review_landing_page
 import json
 
+reasoning_effort = "low"
 
 # This script is used to create a new Next.js app in the projects directory.
 
@@ -222,7 +223,7 @@ Important notes:
                         }
                     }],
                     tool_choice="auto",
-                    reasoning_effort="low",
+                    reasoning_effort=reasoning_effort,
                 )
                 
                 response_message = response.choices[0].message
@@ -296,7 +297,7 @@ Important notes:
                     break
                 if user_instruction:
                     self.modify_app(user_instruction)
-                    review_landing_page(user_instruction)
+                    # review_landing_page(user_instruction)
                 else:
                     print("Please enter a modification instruction or 'exit' to quit")
         
