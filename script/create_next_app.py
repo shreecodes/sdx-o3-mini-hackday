@@ -7,6 +7,7 @@ import openai
 from pathlib import Path
 import re
 from review_app import review_landing_page
+from image_gen import get_image
 import json
 
 reasoning_effort = "low"
@@ -249,8 +250,9 @@ Important notes:
                         self.save_image_description(args['filename'], args['description'])
                         
                         # Here you would actually call your image generation code
-                        # self.generate_image(args['filename'], args['description'])
-                        
+                        full_filename = os.path.join(self.app_dir, 'public', args['filename'])
+                        get_image(args['description'], full_filename)
+
                         tool_call_responses.append({
                             "tool_call_id": tool_call.id,
                             "role": "tool",
