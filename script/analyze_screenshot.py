@@ -44,6 +44,7 @@ def analyze_screenshot(prompt):
       ],
   )
 
-  print(response.choices[0])
+  print(response.choices[0].message.content)
+  return response.choices[0].message.content
 
 analyze_screenshot("What is in this image?")
