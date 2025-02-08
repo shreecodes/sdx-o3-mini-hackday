@@ -13,7 +13,7 @@ import json
 
 from slack import send_slack_message
 
-reasoning_effort = "low"
+reasoning_effort = "medium"
 
 # This script is used to create a new Next.js app in the projects directory.
 
@@ -153,7 +153,7 @@ class NextApp:
         with open(self.images_json_path, 'w') as f:
             json.dump(images, f, indent=2)
 
-    def modify_app(self, user_instruction):
+    def modify_app(self, original_vision, user_instruction):
         """Modify the app based on user instruction using OpenAI."""
         if not self.project_exists():
             print("Project doesn't exist. Create it first.")
@@ -171,7 +171,11 @@ class NextApp:
         # Prepare the prompt
         files_content = self.get_app_files()
         prompt = f"""You are a Next.js expert. Below are the current files in a Next.js application.
-Please modify or create files based on the following instruction:
+Please modify or create files based on the original vision and the following instruction:
+
+<original_vision>
+{original_vision}
+</original_vision>
 
 <user_instruction>
 {user_instruction}
@@ -308,7 +312,7 @@ Important notes:
                     break
                 reviewer_feedback = review_landing_page(self.app_name, requirements, user_instruction)
                 send_slack_message(reviewer_feedback)
-                self.modify_app(reviewer_feedback)
+                self.modify_app(requirements, reviewer_feedback)
         
         except KeyboardInterrupt:
             print("\nInterrupt received.")

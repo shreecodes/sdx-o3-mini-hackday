@@ -14,7 +14,7 @@ class ProjectManager:
         messages = [
             {"role": "system", "content": """
 You are an experienced project manager helping to scope web projects.
-Ask 2-4 critical questions to better understand the project requirements. The user will also be able to free-form specify their answers.
+Ask 2-3 critical questions to better understand the project requirements. The user will also be able to free-form specify their answers.
 Focus on questions that will significantly impact the project scope and direction.
 Remember that the project will be a single-page webpage built with Next.js. Don't ask further about technical requirements or details.
 
@@ -89,6 +89,9 @@ It should include the following sections:
 5. What the project should communicate
 
 Leave out any technical details. Keep each section focused and concise. Use bullet points where appropriate.
+
+Remember that the project will be a single-page webpage built with Next.js.
+Don't include any technical details.
 
 Begin your response with "1. Project Overview"
 Do not reference 'your', speak professionally in the third person.
