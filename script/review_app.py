@@ -12,7 +12,7 @@ def generate_review_prompt(user_instructions: str) -> str:
     """
     base_prompt = (
         "Please review this screenshot of the landing page and evaluate the following aspects:\n\n"
-        "1. Does the page accurately implement these requested changes:\n{instructions}\n\n"
+        "1. What changes need to be made in order to implement the following instructions:\n{instructions}\n\n"
         "2. Visual consistency and alignment:\n"
         "   - Are elements properly aligned and spaced?\n"
         "   - Is the visual hierarchy clear and logical?\n"
