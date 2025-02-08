@@ -47,3 +47,5 @@ next-env.d.ts
 .venv
 
 projects/*
+
+script/__pycache__

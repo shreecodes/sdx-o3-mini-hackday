@@ -6,6 +6,7 @@ import webbrowser
 import openai
 from pathlib import Path
 import re
+from review_app import review_landing_page
 
 
 # This script is used to create a new Next.js app in the projects directory.
@@ -186,6 +187,7 @@ language identifier (tsx, css, etc) and path/to/file is the path relative to the
                     break
                 if user_instruction:
                     self.modify_app(user_instruction)
+                    review_landing_page(user_instruction)
                 else:
                     print("Please enter a modification instruction or 'exit' to quit")
         

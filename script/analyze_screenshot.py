@@ -52,4 +52,5 @@ def analyze_screenshot(prompt):
     print(response.choices[0].message.content)
     return response.choices[0].message.content
 
-analyze_screenshot("Is this a user friendly landing page?")
+if __name__ == "__main__":
+    analyze_screenshot("Is this a user friendly landing page?")
