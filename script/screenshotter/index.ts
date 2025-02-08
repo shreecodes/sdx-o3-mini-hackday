@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test';
 
-async function captureScreenshots() {
+async function captureScreenshots(outputPath: string) {
   // Launch browser
   const browser = await chromium.launch();
   const context = await browser.newContext();
@@ -15,11 +15,11 @@ async function captureScreenshots() {
 
     // Take a screenshot
     await page.screenshot({
-      path: 'screenshot.png',
+      path: outputPath,
       fullPage: true
     });
 
-    console.log('Screenshot captured successfully at screenshot.png');
+    console.log(`Screenshot captured successfully at ${outputPath}`);
   } catch (error) {
     console.error('Error capturing screenshot:', error);
   } finally {
@@ -28,5 +28,13 @@ async function captureScreenshots() {
   }
 }
 
+// Get filename from command line arguments
+const outputPath = process.argv[2];
+
+if (!outputPath) {
+  console.error('Please provide an output filename as an argument');
+  process.exit(1);
+}
+
 // Run the screenshot capture
-captureScreenshots().catch(console.error);
+captureScreenshots(outputPath).catch(console.error);
