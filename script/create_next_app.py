@@ -186,7 +186,6 @@ language identifier (tsx, css, etc) and path/to/file is the path relative to the
                 if user_instruction.lower() in ['exit', 'quit', 'q']:
                     break
                 if user_instruction:
-                    self.modify_app(user_instruction)
                     reviewer_feedback = review_landing_page(user_instruction)
                     self.modify_app(reviewer_feedback)
                 else:
