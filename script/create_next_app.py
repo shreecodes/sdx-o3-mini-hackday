@@ -187,7 +187,8 @@ language identifier (tsx, css, etc) and path/to/file is the path relative to the
                     break
                 if user_instruction:
                     self.modify_app(user_instruction)
-                    review_landing_page(user_instruction)
+                    reviewer_feedback = review_landing_page(user_instruction)
+                    self.modify_app(reviewer_feedback)
                 else:
                     print("Please enter a modification instruction or 'exit' to quit")
         
