@@ -11,6 +11,8 @@ from image_gen import get_image
 from pm import ProjectManager
 import json
 
+from slack import send_slack_message
+
 reasoning_effort = "low"
 
 # This script is used to create a new Next.js app in the projects directory.
@@ -294,6 +296,7 @@ Important notes:
         print(f"Loaded requirements: {requirements[:100]}")
         print("App created successfully - run the following command to start the development server:")
         print(f"cd {self.app_dir} && bun dev")
+        send_slack_message(f"Creating an App with the following requirements: \n\n{requirements}")
 
         # prompt user to continue
         input("Press Enter to continue...")
@@ -304,6 +307,7 @@ Important notes:
                 if user_instruction.lower() in ['exit', 'quit', 'q']:
                     break
                 reviewer_feedback = review_landing_page(self.app_name, requirements, user_instruction)
+                send_slack_message(reviewer_feedback)
                 self.modify_app(reviewer_feedback)
         
         except KeyboardInterrupt:
