@@ -28,7 +28,7 @@ def generate_review_prompt(user_instructions: str) -> str:
     
     return base_prompt.format(instructions=user_instructions)
 
-def review_landing_page(user_instructions: str) -> str:
+def review_landing_page(app_name: str, user_instructions: str) -> str:
     """
     Review a landing page screenshot based on user instructions.
     
@@ -36,4 +36,4 @@ def review_landing_page(user_instructions: str) -> str:
         user_instructions (str): The user's instructions for modifying the landing page
     """
     review_prompt = generate_review_prompt(user_instructions)
-    return analyze_screenshot(review_prompt)
+    return analyze_screenshot(app_name, review_prompt)

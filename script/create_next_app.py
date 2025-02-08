@@ -295,7 +295,7 @@ Important notes:
                 if user_instruction.lower() in ['exit', 'quit', 'q']:
                     break
                 if user_instruction:
-                    reviewer_feedback = review_landing_page(user_instruction)
+                    reviewer_feedback = review_landing_page(self.app_name, user_instruction)
                     self.modify_app(reviewer_feedback)
                 else:
                     print("Please enter a modification instruction or 'exit' to quit")
