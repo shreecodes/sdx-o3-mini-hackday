@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from review_app import review_landing_page
 from image_gen import get_image
+from pm import ProjectManager
 import json
 
 reasoning_effort = "low"
@@ -186,6 +187,10 @@ Important notes:
 3. For new files, provide the complete file contents.
    For existing files, provide the complete new contents of the file.
 
+4. Always only support only a single theme for the website, light OR dark, no auto-detect.
+
+5. Limit the website to a single page, do not create additional pages.
+
 {existing_images_context}
 <project_files>
 {files_content}
@@ -284,21 +289,22 @@ Important notes:
     def run(self):
         self.create_project_directory()
         self.create_app()
+        pm = ProjectManager(self.app_dir)
+        requirements = pm.create_or_load_requirements()
+        print(f"Loaded requirements: {requirements[:100]}")
         print("App created successfully - run the following command to start the development server:")
         print(f"cd {self.app_dir} && bun dev")
-        
-        print("\nEnter modifications for your Next.js app (or 'exit' to quit):")
+
+        # prompt user to continue
+        input("Press Enter to continue...")
         
         try:
             while True:
-                user_instruction = input("\nModification instruction: ").strip()
+                user_instruction = input("\nAdditional modification instructions: ").strip()
                 if user_instruction.lower() in ['exit', 'quit', 'q']:
                     break
-                if user_instruction:
-                    reviewer_feedback = review_landing_page(self.app_name, user_instruction)
-                    self.modify_app(reviewer_feedback)
-                else:
-                    print("Please enter a modification instruction or 'exit' to quit")
+                reviewer_feedback = review_landing_page(self.app_name, requirements, user_instruction)
+                self.modify_app(reviewer_feedback)
         
         except KeyboardInterrupt:
             print("\nInterrupt received.")
