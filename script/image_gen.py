@@ -17,7 +17,7 @@ models = {
 
 
 # N.B. file extension is *implied* by the model. `filename` is a *base* name (without extension)
-def get_image(prompt: str, full_path: str, model=models['flux-s']):
+def get_image(prompt: str, full_path: str, model=models['flux']):
     # extension = 'svg' if 'svg' in model else 'png'
     output  = replicate.run(
         model,

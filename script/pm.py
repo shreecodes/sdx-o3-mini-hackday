@@ -123,7 +123,7 @@ Do not reference 'your', speak professionally in the third person.
         if os.path.exists(self.requirements_file):
             print(f"Loading requirements from {self.requirements_file}")
             with open(self.requirements_file, 'r', encoding='utf-8') as f:
-                return f.read()
+                return f.read(), True
         
         print("Welcome to the Project Requirements Generator!")
         print("Please describe your project idea (or type 'exit' to quit):")
@@ -138,7 +138,7 @@ Do not reference 'your', speak professionally in the third person.
 
         # Save the requirements
         self.save_requirements(initial_prompt, requirements)
-        return requirements
+        return requirements, False
 
 
 def main():

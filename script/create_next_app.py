@@ -11,8 +11,6 @@ from image_gen import get_image
 from pm import ProjectManager
 import json
 
-from slack import send_slack_message
-
 reasoning_effort = "medium"
 
 # This script is used to create a new Next.js app in the projects directory.
@@ -153,7 +151,7 @@ class NextApp:
         with open(self.images_json_path, 'w') as f:
             json.dump(images, f, indent=2)
 
-    def modify_app(self, original_vision, user_instruction):
+    def modify_app(self, user_instruction):
         """Modify the app based on user instruction using OpenAI."""
         if not self.project_exists():
             print("Project doesn't exist. Create it first.")
@@ -171,11 +169,7 @@ class NextApp:
         # Prepare the prompt
         files_content = self.get_app_files()
         prompt = f"""You are a Next.js expert. Below are the current files in a Next.js application.
-Please modify or create files based on the original vision and the following instruction:
-
-<original_vision>
-{original_vision}
-</original_vision>
+Please modify or create files to improve the webpage based on the following instruction:
 
 <user_instruction>
 {user_instruction}
@@ -196,6 +190,8 @@ Important notes:
 4. Always only support only a single theme for the website, light OR dark, no auto-detect.
 
 5. Limit the website to a single page, do not create additional pages.
+
+6. Feel free to make large, sweeping changes to the website based on the user's requirements and feedback.
 
 {existing_images_context}
 <project_files>
@@ -296,14 +292,15 @@ Important notes:
         self.create_project_directory()
         self.create_app()
         pm = ProjectManager(self.app_dir)
-        requirements = pm.create_or_load_requirements()
+        requirements, already_exists = pm.create_or_load_requirements()
         print(f"Loaded requirements: {requirements[:100]}")
         print("App created successfully - run the following command to start the development server:")
         print(f"cd {self.app_dir} && bun dev")
-        send_slack_message(f"Creating an App with the following requirements: \n\n{requirements}")
 
         # prompt user to continue
-        input("Press Enter to continue...")
+        if not already_exists:
+            print("Doing first iteration with requirements...")
+            self.modify_app(requirements)
         
         try:
             while True:
@@ -311,8 +308,7 @@ Important notes:
                 if user_instruction.lower() in ['exit', 'quit', 'q']:
                     break
                 reviewer_feedback = review_landing_page(self.app_name, requirements, user_instruction)
-                send_slack_message(reviewer_feedback)
-                self.modify_app(requirements, reviewer_feedback)
+                self.modify_app(reviewer_feedback)
         
         except KeyboardInterrupt:
             print("\nInterrupt received.")
